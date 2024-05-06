@@ -7,6 +7,8 @@ const logger = require('./logging/logger');
 const connectToDb = require('./db/mongoDb');
 const bookRouter = require('./routes/books.route');
 const authorRouter = require('./routes/authors.route');
+const authMiddleware = require('./auth/auth0');
+const { requiresAuth } = require('express-openid-connect');
 
 const app = express();
 
@@ -25,6 +27,9 @@ const limiter = rateLimit({
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
+// Authentication middleware
+app.use(authMiddleware);
+
 // Limiter middleware
 app.use(limiter);
 
@@ -35,8 +40,8 @@ app.use(helmet());
 app.get('/', (req, res) => {
   res.send('Welcome to your number 1 Bookstore');
 });
-app.use('/api/v1/books', bookRouter);
-app.use('/api/v1/authors', authorRouter);
+app.use('/api/v1/books', requiresAuth(), bookRouter);
+app.use('/api/v1/authors', requiresAuth(), authorRouter);
 
 app.use((err, req, res, next) => {
   logger.error(err.message);
